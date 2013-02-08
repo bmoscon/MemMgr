@@ -1,0 +1,3 @@
+Memory Manager written in C/C++
+
+Initial commit only contains a simple allocator. Need to add an actuall memory manager
