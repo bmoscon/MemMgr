@@ -84,11 +84,8 @@ public:
 
   void free(void *block)
   {
-    mcb_st *block_mcb;
-    
     // pointer arithmetic to extract MCB from block. Once found, mark "free"
-    block_mcb = (mcb_st *)((uint8_t *)block - sizeof(mcb_st));
-    block_mcb->free = true;
+    ((mcb_st *)((uint8_t *)block - sizeof(mcb_st)))->free = true;
   }
 
 
