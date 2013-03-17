@@ -65,6 +65,7 @@
 #define __MEM_ALLOCATOR__
 
 #include <cassert>
+#include <cstring>
 
 #include <stdint.h>
 #include <unistd.h>
@@ -95,19 +96,20 @@ public:
     void *ret = NULL;
     mcb_st *mcb;
     
-    assert(size =! 0);
+    assert(size != 0);
     
     curr = mem_start_;
-    size += sizeof(mcb_st);
+    size = size + sizeof(mcb_st);
 
     while (curr != last_addr_) {
       // get the MCB so we can test for open blocks and size
       mcb = (mcb_st *)curr;
       
       if ((mcb->free) && (mcb->size >= size)) {
-	mcb->free = false;
 	ret = curr;
-	
+	initBlock((uint8_t *)ret);
+
+	mcb->free = false;
 	ret = (uint8_t *)ret + sizeof(mcb_st);
 	
 	return (ret);
@@ -126,6 +128,8 @@ public:
     
     // set MCB for the block
     mcb = (mcb_st *)ret;
+    mcb->size = size;
+    initBlock((uint8_t *)ret);
     mcb->free = false;
     mcb->size = size;
     
@@ -138,6 +142,30 @@ public:
 
 
 protected:
+
+  void initBlock(uint8_t *block)
+  {
+    assert(!((mcb_st *)block)->free || ((mcb_st *)block)->size == 0);
+    
+    for (int i = 0; i < ((mcb_st *)block)->size - sizeof(mcb_st); i += 4) {
+      memset(block + sizeof(mcb_st) + i, 0xD, 1);
+    }
+    
+    for (int i = 1; i < ((mcb_st *)block)->size - sizeof(mcb_st); i += 4) {
+      memset(block + sizeof(mcb_st) + i, 0xE, 1);
+    }
+
+    for (int i = 2; i < ((mcb_st *)block)->size - sizeof(mcb_st); i += 4) {
+      memset(block + sizeof(mcb_st) + i, 0xA, 1);
+    }
+    
+    for (int i = 3; i < ((mcb_st *)block)->size - sizeof(mcb_st); i += 4) {
+      memset(block + sizeof(mcb_st) + i, 0xD, 1);
+    }
+
+
+  }
+
   typedef struct mcb_st {
     bool free;
     uint32_t size;
